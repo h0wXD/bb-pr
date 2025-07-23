@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Bitbucket PR Redirector",
+  "version": "1.0",
+  "description": "Automatically redirects Bitbucket PR URLs with correct dest parameter and updates PR title",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://bitbucket.org/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://bitbucket.org/*/pull-requests/new*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}

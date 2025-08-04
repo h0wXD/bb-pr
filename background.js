@@ -1,4 +1,9 @@
 // Background script to monitor URL changes and redirect if needed
+
+// Shared regex pattern for task name parsing
+// Captures: [1] = task name (e.g., "TASK-1337"), [2] = branch part (e.g., "uat")
+const TASK_BRANCH_PATTERN = /^([A-Z]+[-_]\d+)[-_](.+)$/i;
+
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // Only process when the URL has changed and is complete
   if (changeInfo.status === 'complete' && tab.url) {
@@ -39,13 +44,29 @@ function processUrl(tabId, url) {
 
 function determineDestValue(sourceParam) {
   // Extract the target branch from the source parameter
-  // Expected format: LETTERS-NUMBERS-uat or LETTERS-NUMBERS-production (e.g., TASK-1337-uat, OTHER-23213-production)
-  const lowerSource = sourceParam.toLowerCase();
+  // Expected format: LETTERS[-_]NUMBERS[-_]BRANCH (e.g., TASK-1337-uat, TASK_1337_uat, OTHER-23213-production, OTHER_23213_production)
   
-  if (lowerSource.endsWith('-uat')) {
+  // Use regex to match the pattern and extract both task name and branch part
+  const match = sourceParam.match(TASK_BRANCH_PATTERN);
+  if (!match) {
+    return null;
+  }
+  
+  const branchPart = match[2].toLowerCase();
+  
+  // Check for UAT branches
+  if (branchPart === 'uat' || branchPart.endsWith('uat')) {
     return 'uat';
-  } else if (lowerSource.endsWith('-production') || lowerSource.endsWith('-prod')) {
+  }
+  
+  // Check for production branches
+  if (branchPart === 'prod' || branchPart.endsWith('production') || branchPart.endsWith('prod')) {
     return 'production';
+  }
+  
+  // Check for demo branches
+  if (branchPart === 'demo' || branchPart.endsWith('demo')) {
+    return 'demo';
   }
   
   return null;

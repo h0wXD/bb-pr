@@ -2,30 +2,33 @@
 (function() {
   'use strict';
   
+  // Shared regex pattern for task name parsing
+  // Captures: [1] = task name (e.g., "TASK-1337"), [2] = branch part (e.g., "uat")
+  const TASK_BRANCH_PATTERN = /^([A-Z]+[-_]\d+)[-_](.+)$/i;
+  
   // Function to determine expected dest value from source parameter
   function getExpectedDestValue(sourceParam) {
-    const lowerSource = sourceParam.toLowerCase();
-    
-    // Extract the branch part after the last dash
-    const parts = lowerSource.split('-');
-    if (parts.length < 3) {
-      return null; // Need at least TASK-NUMBER-BRANCH format
+    // Use regex to match the pattern and extract both task name and branch part
+    // Expected format: LETTERS[-_]NUMBERS[-_]BRANCH (e.g., TASK-1337-uat, TASK_1337_uat, OTHER-23213-production, OTHER_23213_production)
+    const match = sourceParam.match(TASK_BRANCH_PATTERN);
+    if (!match) {
+      return null;
     }
     
-    const branchPart = parts[parts.length - 1]; // Get the last part (branch name)
+    const branchPart = match[2].toLowerCase();
     
     // Check for UAT branches
-    if (branchPart === 'uat' || branchPart.startsWith('uat')) {
+    if (branchPart === 'uat' || branchPart.endsWith('uat')) {
       return 'uat';
     }
     
     // Check for production branches
-    if (branchPart === 'prod' || branchPart === 'production' || branchPart.startsWith('prod')) {
+    if (branchPart === 'prod' || branchPart.endsWith('production') || branchPart.endsWith('prod')) {
       return 'production';
     }
     
     // Check for demo branches
-    if (branchPart === 'demo' || branchPart.startsWith('demo')) {
+    if (branchPart === 'demo' || branchPart.endsWith('demo')) {
       return 'demo';
     }
     
@@ -77,8 +80,8 @@
         return;
       }
       
-      // Extract task name (e.g., TASK-1337 or OTHER-23213 from TASK-1337-uat or OTHER-23213-production)
-      const taskMatch = sourceParam.match(/^([A-Z]+-\d+)/i);
+      // Extract task name (e.g., TASK-1337, TASK_1337, OTHER-23213, OTHER_23213 from TASK-1337-uat, TASK_1337_uat, OTHER-23213-production, OTHER_23213_production)
+      const taskMatch = sourceParam.match(TASK_BRANCH_PATTERN);
       if (!taskMatch) {
         return;
       }
